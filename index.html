@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GB GERÊNCIA PRO - Gestão Completa de Moto Uber</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            gb: {
+              bg: '#0A0E17',
+              card: '#131A27',
+              border: '#1F293D',
+              primary: '#10B981',
+              accent: '#3B82F6',
+              warning: '#F59E0B',
+              danger: '#EF4444'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <!-- Lucide Icons & Chart.js -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-gb-bg text-gray-100 font-sans min-h-screen pb-20">
+
+  <!-- Header -->
+  <header class="bg-gb-card border-b border-gb-border sticky top-0 z-30 px-4 py-3 shadow-xl">
+    <div class="max-w-xl mx-auto flex justify-between items-center">
+      <div class="flex items-center gap-2.5">
+        <div class="bg-emerald-500/10 p-2 rounded-xl border border-emerald-500/20">
+          <i data-lucide="zap" class="text-emerald-400 w-6 h-6"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-1.5">
+            <h1 class="text-lg font-black tracking-wider text-white">GB <span class="text-emerald-400">GERÊNCIA</span></h1>
+            <span class="bg-emerald-500/20 text-emerald-400 text-[9px] font-black px-1.5 py-0.5 rounded border border-emerald-500/30">PRO</span>
+          </div>
+          <p class="text-[10px] text-gray-400">Painel Profissional de Moto Uber & Entregas</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <button onclick="exportarDados()" title="Exportar Relatório CSV" class="p-2 rounded-lg bg-gb-border text-gray-300 hover:text-white transition">
+          <i data-lucide="file-spreadsheet" class="w-4 h-4"></i>
+        </button>
+        <button onclick="limparTudo()" title="Resetar Tudo" class="p-2 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition">
+          <i data-lucide="trash-2" class="w-4 h-4"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-xl mx-auto p-4 space-y-5">
+
+    <!-- Filtro de Período -->
+    <section class="flex bg-gb-card p-1 rounded-xl border border-gb-border">
+      <button onclick="setFiltro('hoje')" id="btnFiltroHoje" class="flex-1 py-1.5 text-xs font-bold rounded-lg transition bg-emerald-500 text-gray-950">Hoje</button>
+      <button onclick="setFiltro('semana')" id="btnFiltroSemana" class="flex-1 py-1.5 text-xs font-bold rounded-lg transition text-gray-400 hover:text-white">Semana</button>
+      <button onclick="setFiltro('mes')" id="btnFiltroMes" class="flex-1 py-1.5 text-xs font-bold rounded-lg transition text-gray-400 hover:text-white">Mês</button>
+      <button onclick="setFiltro('tudo')" id="btnFiltroTudo" class="flex-1 py-1.5 text-xs font-bold rounded-lg transition text-gray-400 hover:text-white">Tudo</button>
+    </section>
+
+    <!-- Meta Diária -->
+    <section class="bg-gb-card p-4 rounded-xl border border-gb-border shadow-lg">
+      <div class="flex justify-between items-center mb-2">
+        <div class="flex items-center gap-2">
+          <i data-lucide="target" class="w-4 h-4 text-emerald-400"></i>
+          <span class="text-xs font-bold text-gray-300 uppercase">Meta Diária</span>
+        </div>
+        <button onclick="definirMeta()" class="text-xs text-emerald-400 hover:underline">Ajustar Meta</button>
+      </div>
+      <div class="flex justify-between items-baseline mb-1">
+        <span id="txtProgressoMeta" class="text-2xl font-extrabold text-white">R$ 0,00</span>
+        <span id="txtMetaObjetivo" class="text-xs text-gray-400">de R$ 200,00</span>
+      </div>
+      <div class="w-full bg-gray-900 h-2.5 rounded-full overflow-hidden border border-gb-border">
+        <div id="barMeta" class="bg-gradient-to-r from-emerald-500 to-emerald-400 h-full w-0 transition-all duration-500"></div>
+      </div>
+    </section>
+
+    <!-- Cards Financeiros Principais -->
+    <section class="grid grid-cols-2 gap-3">
+      <div class="bg-gb-card p-3.5 rounded-xl border border-gb-border">
+        <p class="text-[10px] text-gray-400 font-semibold uppercase">Faturamento Bruto</p>
+        <p id="totalBruto" class="text-xl font-black text-emerald-400 mt-1">R$ 0,00</p>
+      </div>
+      <div class="bg-gb-card p-3.5 rounded-xl border border-gb-border">
+        <p class="text-[10px] text-gray-400 font-semibold uppercase">Gastos Totais</p>
+        <p id="totalGastos" class="text-xl font-black text-red-400 mt-1">R$ 0,00</p>
+      </div>
+      
+      <!-- Lucro Líquido Real -->
+      <div class="col-span-2 bg-gradient-to-r from-emerald-950/40 via-gb-card to-gb-card p-4 rounded-xl border border-emerald-500/30 flex justify-between items-center">
+        <div>
+          <p class="text-xs text-emerald-400 font-bold uppercase tracking-wider">Lucro Líquido Real</p>
+          <p id="lucroLiquido" class="text-3xl font-black text-white mt-1">R$ 0,00</p>
+        </div>
+        <div class="text-right">
+          <p class="text-xs text-gray-400">Margem de Lucro</p>
+          <p id="margemLucro" class="text-lg font-bold text-emerald-400">0%</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Métricas Avançadas de Performance -->
+    <section class="bg-gb-card p-4 rounded-xl border border-gb-border">
+      <h2 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+        <i data-lucide="activity" class="w-4 h-4 text-emerald-400"></i> Performance & Custos por KM
+      </h2>
+      <div class="grid grid-cols-2 gap-2 text-center mb-2">
+        <div class="bg-gb-bg p-2.5 rounded-lg border border-gb-border">
+          <p class="text-[10px] text-gray-400">Ganhos por KM (R$/KM)</p>
+          <p id="metricaRk" class="text-base font-bold text-emerald-400 mt-0.5">R$ 0,00</p>
+        </div>
+        <div class="bg-gb-bg p-2.5 rounded-lg border border-gb-border">
+          <p class="text-[10px] text-gray-400">Ganhos por Hora (R$/Hora)</p>
+          <p id="metricaRh" class="text-base font-bold text-emerald-400 mt-0.5">R$ 0,00</p>
+        </div>
+      </div>
+      <div class="grid grid-cols-2 gap-2 text-center">
+        <div class="bg-gb-bg p-2.5 rounded-lg border border-gb-border">
+          <p class="text-[10px] text-gray-400">Consumo Média</p>
+          <p id="metricaKml" class="text-base font-bold text-blue-400 mt-0.5">0 km/l</p>
+        </div>
+        <div class="bg-gb-bg p-2.5 rounded-lg border border-gb-border">
+          <p class="text-[10px] text-gray-400">Custo de Gasolina / KM</p>
+          <p id="metricaCustoKm" class="text-base font-bold text-red-400 mt-0.5">R$ 0,00</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Formulário de Lançamento Completo -->
+    <section class="bg-gb-card p-4 rounded-xl border border-gb-border shadow-md">
+      <h2 class="text-sm font-bold text-emerald-400 mb-3 flex items-center gap-2">
+        <i data-lucide="plus-circle" class="w-4 h-4"></i> Novo Lançamento
+      </h2>
+      <form id="formNovoRegistro" class="space-y-3">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-[11px] text-gray-400 mb-1">Categoria</label>
+            <select id="tipo" class="w-full bg-gb-bg border border-gb-border rounded-lg p-2 text-xs text-white focus:outline-none focus:border-emerald-500">
+              <option value="ganho">💰 Ganho / Corrida</option>
+              <option value="combustivel">⛽ Combustível</option>
+              <option value="manutencao">🔧 Manutenção / Peça</option>
+              <option value="outro">📦 Outro Gasto</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-[11px] text-gray-400 mb-1">Plataforma / Origem</label>
+            <select id="plataforma" class="w-full bg-gb-bg border border-gb-border rounded-lg p-2 text-xs text-white focus:outline-none focus:border-emerald-500">
+              <option value="Uber Moto">Uber Moto</option>
+              <option value="99 Moto">99 Moto</option>
+              <option value="iFood / Entrega">iFood / Entregas</option>
+              <option value="Particular">Particular / Por Fora</option>
+              <option value="Geral">Geral / Posto</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-[11px] text-gray-400 mb-1">Valor Total (R$)</label>
+            <input type="number" step="0.01" id="valor" placeholder="0,00" required class="w-full bg-gb-bg border border-gb-border rounded-lg p-2 text-xs text-white focus:outline-none focus:border-emerald-500">
+          </div>
+          <div>
+            <label class="block text-[11px] text-gray-400 mb-1">KM Rodados</label>
+            <input type="number" id="km" placeholder="Ex: 12" class="w-full bg-gb-bg border border-gb-border rounded-lg p-2 text-xs text-white focus:outline-none focus:border-emerald-500">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-[11px] text-gray-400 mb-1">Horas Trabalhadas</label>
+            <input type="number" step="0.1" id="horas" placeholder="Ex: 1.5" class="w-full bg-gb-bg border border-gb-border rounded-lg p-2 text-xs text-white focus:outline-none focus:border-emerald-500">
+          </div>
+          <div>
+            <label class="block text-[11px] text-gray-400 mb-1">Litros (Se Abasteceu)</label>
+            <input type="number" step="0.01" id="litros" placeholder="Ex: 4.5" class="w-full bg-gb-bg border border-gb-border rounded-lg p-2 text-xs text-white focus:outline-none focus:border-emerald-500">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-[11px] text-gray-400 mb-1">Descrição / Observação</label>
+          <input type="text" id="descricao" placeholder="Ex: Turno Noturno, Troca de Óleo Mobil..." class="w-full bg-gb-bg border border-gb-border rounded-lg p-2 text-xs text-white focus:outline-none focus:border-emerald-500">
+        </div>
+
+        <button type="submit" class="w-full bg-emerald-500 hover:bg-emerald-600 text-gray-950 font-bold py-2.5 rounded-lg shadow transition flex items-center justify-center gap-2 text-xs">
+          <i data-lucide="check-circle-2" class="w-4 h-4"></i> Salvar Lançamento PRO
+        </button>
+      </form>
+    </section>
+
+    <!-- Gráfico Comparativo -->
+    <section class="bg-gb-card p-4 rounded-xl border border-gb-border">
+      <h2 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+        <i data-lucide="bar-chart-3" class="w-4 h-4 text-emerald-400"></i> Gráfico Financeiro
+      </h2>
+      <div class="h-48">
+        <canvas id="graficoFinancas"></canvas>
+      </div>
+    </section>
+
+    <!-- Central de Manutenção Individual da Moto -->
+    <section class="bg-gb-card p-4 rounded-xl border border-gb-border space-y-3">
+      <div class="flex justify-between items-center">
+        <h2 class="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
+          <i data-lucide="wrench" class="w-4 h-4 text-emerald-400"></i> Manutenção & Revisões
+        </h2>
+        <span class="text-[10px] text-gray-500">Controle Individual por Peça</span>
+      </div>
+      
+      <div class="grid grid-cols-2 gap-2 text-xs">
+        <!-- Óleo -->
+        <div class="bg-gb-bg p-2.5 rounded-lg border border-gb-border flex flex-col justify-between gap-2">
+          <div>
+            <div class="flex justify-between items-center mb-1">
+              <span class="font-bold text-gray-300">Óleo Motor</span>
+              <span id="badgeOleo" class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">OK</span>
+            </div>
+            <p id="kmOleo" class="text-[10px] text-gray-400">0 / 1.000 km</p>
+          </div>
+          <div class="flex items-center gap-1">
+            <button onclick="resetarManutencaoItem('Oleo')" class="flex-1 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 py-1 rounded border border-emerald-500/20 text-[10px] font-bold flex items-center justify-center gap-1">
+              <i data-lucide="rotate-ccw" class="w-3 h-3"></i> Troquei
+            </button>
+            <button onclick="editarLimiteManutencao('Oleo')" title="Ajustar limite de KM" class="p-1 text-gray-400 hover:text-white">
+              <i data-lucide="settings" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Kit Relação -->
+        <div class="bg-gb-bg p-2.5 rounded-lg border border-gb-border flex flex-col justify-between gap-2">
+          <div>
+            <div class="flex justify-between items-center mb-1">
+              <span class="font-bold text-gray-300">Kit Relação</span>
+              <span id="badgeRelacao" class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">OK</span>
+            </div>
+            <p id="kmRelacao" class="text-[10px] text-gray-400">0 / 12.000 km</p>
+          </div>
+          <div class="flex items-center gap-1">
+            <button onclick="resetarManutencaoItem('Relacao')" class="flex-1 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 py-1 rounded border border-emerald-500/20 text-[10px] font-bold flex items-center justify-center gap-1">
+              <i data-lucide="rotate-ccw" class="w-3 h-3"></i> Troquei
+            </button>
+            <button onclick="editarLimiteManutencao('Relacao')" title="Ajustar limite de KM" class="p-1 text-gray-400 hover:text-white">
+              <i data-lucide="settings" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Pastilhas de Freio -->
+        <div class="bg-gb-bg p-2.5 rounded-lg border border-gb-border flex flex-col justify-between gap-2">
+          <div>
+            <div class="flex justify-between items-center mb-1">
+              <span class="font-bold text-gray-300">Freios</span>
+              <span id="badgeFreio" class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">OK</span>
+            </div>
+            <p id="kmFreio" class="text-[10px] text-gray-400">0 / 5.000 km</p>
+          </div>
+          <div class="flex items-center gap-1">
+            <button onclick="resetarManutencaoItem('Freio')" class="flex-1 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 py-1 rounded border border-emerald-500/20 text-[10px] font-bold flex items-center justify-center gap-1">
+              <i data-lucide="rotate-ccw" class="w-3 h-3"></i> Troquei
+            </button>
+            <button onclick="editarLimiteManutencao('Freio')" title="Ajustar limite de KM" class="p-1 text-gray-400 hover:text-white">
+              <i data-lucide="settings" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Pneu Traseiro -->
+        <div class="bg-gb-bg p-2.5 rounded-lg border border-gb-border flex flex-col justify-between gap-2">
+          <div>
+            <div class="flex justify-between items-center mb-1">
+              <span class="font-bold text-gray-300">Pneu Traseiro</span>
+              <span id="badgePneu" class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">OK</span>
+            </div>
+            <p id="kmPneu" class="text-[10px] text-gray-400">0 / 10.000 km</p>
+          </div>
+          <div class="flex items-center gap-1">
+            <button onclick="resetarManutencaoItem('Pneu')" class="flex-1 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 py-1 rounded border border-emerald-500/20 text-[10px] font-bold flex items-center justify-center gap-1">
+              <i data-lucide="rotate-ccw" class="w-3 h-3"></i> Troquei
+            </button>
+            <button onclick="editarLimiteManutencao('Pneu')" title="Ajustar limite de KM" class="p-1 text-gray-400 hover:text-white">
+              <i data-lucide="settings" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Lista de Histórico -->
+    <section class="bg-gb-card p-4 rounded-xl border border-gb-border">
+      <h2 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+        <i data-lucide="history" class="w-4 h-4 text-emerald-400"></i> Histórico de Lançamentos
+      </h2>
+      <div id="listaHistorico" class="space-y-2 max-h-80 overflow-y-auto pr-1">
+        <p class="text-xs text-gray-500 text-center py-6">Sem lançamentos registados.</p>
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    lucide.createIcons();
+
+    // Estado Geral da Aplicação com Suporte a Limites e Pontos de Origem
+    let db = JSON.parse(localStorage.getItem('gb_gerencia_pro_db')) || {
+      registros: [],
+      metaDiaria: 200,
+      filtroAtual: 'hoje',
+      kmBaseOleo: 0,
+      limiteOleo: 1000,
+      kmBaseRelacao: 0,
+      limiteRelacao: 12000,
+      kmBaseFreio: 0,
+      limiteFreio: 5000,
+      kmBasePneu: 0,
+      limitePneu: 10000
+    };
+
+    // Garantir compatibilidade com versões antigas do banco
+    if (!db.limiteOleo) db.limiteOleo = 1000;
+    if (!db.limiteRelacao) db.limiteRelacao = 12000;
+    if (!db.limiteFreio) db.limiteFreio = 5000;
+    if (!db.limitePneu) db.limitePneu = 10000;
+
+    let chartInstance = null;
+
+    const form = document.getElementById('formNovoRegistro');
+    const listaHistorico = document.getElementById('listaHistorico');
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+
+      const tipo = document.getElementById('tipo').value;
+      const plataforma = document.getElementById('plataforma').value;
+      const valor = parseFloat(document.getElementById('valor').value) || 0;
+      const km = parseFloat(document.getElementById('km').value) || 0;
+      const horas = parseFloat(document.getElementById('horas').value) || 0;
+      const litros = parseFloat(document.getElementById('litros').value) || 0;
+      const descricao = document.getElementById('descricao').value || (tipo === 'ganho' ? `Corrida ${plataforma}` : tipo);
+
+      const novoItem = {
+        id: Date.now(),
+        tipo,
+        plataforma,
+        valor,
+        km,
+        horas,
+        litros,
+        descricao,
+        timestamp: new Date().getTime(),
+        dataStr: new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
+      };
+
+      db.registros.unshift(novoItem);
+      salvarAtualizar();
+      form.reset();
+    });
+
+    function deletarItem(id) {
+      db.registros = db.registros.filter(item => item.id !== id);
+      salvarAtualizar();
+    }
+
+    function setFiltro(tipoFiltro) {
+      db.filtroAtual = tipoFiltro;
+      ['hoje', 'semana', 'mes', 'tudo'].forEach(f => {
+        const btn = document.getElementById(`btnFiltro${f.charAt(0).toUpperCase() + f.slice(1)}`);
+        if (f === tipoFiltro) {
+          btn.className = "flex-1 py-1.5 text-xs font-bold rounded-lg transition bg-emerald-500 text-gray-950";
+        } else {
+          btn.className = "flex-1 py-1.5 text-xs font-bold rounded-lg transition text-gray-400 hover:text-white";
+        }
+      });
+      renderizar();
+    }
+
+    function definirMeta() {
+      const m = prompt("Digite o valor da sua Meta Diária (R$):", db.metaDiaria);
+      if (m && !isNaN(m)) {
+        db.metaDiaria = parseFloat(m);
+        salvarAtualizar();
+      }
+    }
+
+    // Reinicia APENAS a peça selecionada
+    function resetarManutencaoItem(tipo) {
+      const nomes = { Oleo: 'Óleo do Motor', Relacao: 'Kit Relação', Freio: 'Pastilhas de Freio', Pneu: 'Pneu Traseiro' };
+      if (confirm(`Confirma a troca/manutenção do item: ${nomes[tipo]}?\nO contador deste item será zerado a partir de agora.`)) {
+        const totalKmAcumulado = db.registros.reduce((acc, i) => acc + (i.km || 0), 0);
+        db[`kmBase${tipo}`] = totalKmAcumulado;
+        salvarAtualizar();
+      }
+    }
+
+    // Permite mudar a meta de KM para troca de cada item
+    function editarLimiteManutencao(tipo) {
+      const nomes = { Oleo: 'Óleo do Motor', Relacao: 'Kit Relação', Freio: 'Pastilhas de Freio', Pneu: 'Pneu Traseiro' };
+      const atual = db[`limite${tipo}`];
+      const novoLimite = prompt(`Digite com quantos KM você deseja trocar o item (${nomes[tipo]}):`, atual);
+      if (novoLimite && !isNaN(novoLimite) && parseFloat(novoLimite) > 0) {
+        db[`limite${tipo}`] = parseInt(novoLimite);
+        salvarAtualizar();
+      }
+    }
+
+    function limparTudo() {
+      if (confirm("Tem certeza que deseja apagar TODOS os lançamentos do GB Gerência PRO?")) {
+        db.registros = [];
+        salvarAtualizar();
+      }
+    }
+
+    function exportarDados() {
+      if (db.registros.length === 0) return alert("Não existem dados para exportar!");
+      let csv = "Data,Tipo,Plataforma,Descricao,Valor,KM,Horas,Litros\n";
+      db.registros.forEach(r => {
+        csv += `"${r.dataStr}","${r.tipo}","${r.plataforma}","${r.descricao}",${r.valor},${r.km},${r.horas},${r.litros}\n`;
+      });
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.setAttribute('href', url);
+      a.setAttribute('download', `gb_gerencia_pro_${Date.now()}.csv`);
+      a.click();
+    }
+
+    function salvarAtualizar() {
+      localStorage.setItem('gb_gerencia_pro_db', JSON.stringify(db));
+      renderizar();
+    }
+
+    function formatar(val) {
+      return val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    }
+
+    function filtrarRegistros() {
+      const agora = new Date();
+      return db.registros.filter(item => {
+        const itemData = new Date(item.timestamp);
+        if (db.filtroAtual === 'hoje') {
+          return itemData.toDateString() === agora.toDateString();
+        } else if (db.filtroAtual === 'semana') {
+          const seteDiasAtras = new Date(agora.getTime() - 7 * 24 * 60 * 60 * 1000);
+          return itemData >= seteDiasAtras;
+        } else if (db.filtroAtual === 'mes') {
+          return itemData.getMonth() === agora.getMonth() && itemData.getFullYear() === agora.getFullYear();
+        }
+        return true; // 'tudo'
+      });
+    }
+
+    function renderizar() {
+      const registrosFiltrados = filtrarRegistros();
+
+      let bruto = 0;
+      let gastos = 0;
+      let totalKm = 0;
+      let totalHoras = 0;
+      let totalLitros = 0;
+      let gastoCombustivel = 0;
+
+      listaHistorico.innerHTML = '';
+
+      if (registrosFiltrados.length === 0) {
+        listaHistorico.innerHTML = `<p class="text-xs text-gray-500 text-center py-6">Nenhum lançamento no período selecionado.</p>`;
+      }
+
+      registrosFiltrados.forEach(item => {
+        if (item.tipo === 'ganho') {
+          bruto += item.valor;
+        } else {
+          gastos += item.valor;
+          if (item.tipo === 'combustivel') gastoCombustivel += item.valor;
+        }
+
+        totalKm += item.km || 0;
+        totalHoras += item.horas || 0;
+        totalLitros += item.litros || 0;
+
+        const isGanho = item.tipo === 'ganho';
+        const corVal = isGanho ? 'text-emerald-400' : 'text-red-400';
+        const sinal = isGanho ? '+' : '-';
+        let icone = 'coins';
+        if (item.tipo === 'combustivel') icone = 'fuel';
+        if (item.tipo === 'manutencao') icone = 'wrench';
+
+        const card = document.createElement('div');
+        card.className = 'bg-gb-bg p-2.5 rounded-lg border border-gb-border flex justify-between items-center text-xs';
+        card.innerHTML = `
+          <div class="flex items-center gap-2.5">
+            <div class="p-2 rounded-lg bg-gb-card border border-gb-border">
+              <i data-lucide="${icone}" class="w-4 h-4 ${corVal}"></i>
+            </div>
+            <div>
+              <div class="flex items-center gap-1.5">
+                <p class="font-bold text-gray-200">${item.descricao}</p>
+                <span class="text-[9px] bg-gb-card px-1.5 py-0.2 rounded border border-gb-border text-gray-400">${item.plataforma || 'Geral'}</span>
+              </div>
+              <p class="text-[10px] text-gray-500">${item.dataStr} ${item.km ? '• ' + item.km + 'km' : ''} ${item.horas ? '• ' + item.horas + 'h' : ''}</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2.5">
+            <span class="font-bold ${corVal} text-sm">${sinal} ${formatar(item.valor)}</span>
+            <button onclick="deletarItem(${item.id})" class="text-gray-500 hover:text-red-400">
+              <i data-lucide="x" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        `;
+        listaHistorico.appendChild(card);
+      });
+
+      const liquido = bruto - gastos;
+      const margem = bruto > 0 ? ((liquido / bruto) * 100).toFixed(1) : 0;
+
+      // Atualizar Cards
+      document.getElementById('totalBruto').textContent = formatar(bruto);
+      document.getElementById('totalGastos').textContent = formatar(gastos);
+      document.getElementById('lucroLiquido').textContent = formatar(liquido);
+      document.getElementById('margemLucro').textContent = `${margem}%`;
+
+      // Meta
+      document.getElementById('txtProgressoMeta').textContent = formatar(bruto);
+      document.getElementById('txtMetaObjetivo').textContent = `de ${formatar(db.metaDiaria)}`;
+      const percMeta = Math.min((bruto / db.metaDiaria) * 100, 100);
+      document.getElementById('barMeta').style.width = `${percMeta}%`;
+
+      // Métricas
+      const rk = totalKm > 0 ? (bruto / totalKm).toFixed(2) : '0.00';
+      const rh = totalHoras > 0 ? (bruto / totalHoras).toFixed(2) : '0.00';
+      const kml = totalLitros > 0 ? (totalKm / totalLitros).toFixed(1) : '0.0';
+      const custoKmGas = totalKm > 0 ? (gastoCombustivel / totalKm).toFixed(2) : '0.00';
+
+      document.getElementById('metricaRk').textContent = `R$ ${rk}`;
+      document.getElementById('metricaRh').textContent = `R$ ${rh}`;
+      document.getElementById('metricaKml').textContent = `${kml} km/l`;
+      document.getElementById('metricaCustoKm').textContent = `R$ ${custoKmGas}`;
+
+      // Cálculo de KM Acumulado Total para Manutenções
+      const kmGeral = db.registros.reduce((acc, i) => acc + (i.km || 0), 0);
+      
+      atualizarBadgeManutencao('Oleo', kmGeral - db.kmBaseOleo, db.limiteOleo);
+      atualizarBadgeManutencao('Relacao', kmGeral - db.kmBaseRelacao, db.limiteRelacao);
+      atualizarBadgeManutencao('Freio', kmGeral - db.kmBaseFreio, db.limiteFreio);
+      atualizarBadgeManutencao('Pneu', kmGeral - db.kmBasePneu, db.limitePneu);
+
+      lucide.createIcons();
+      atualizarGrafico(bruto, gastos, liquido);
+    }
+
+    function atualizarBadgeManutencao(tipo, kmRodado, limite) {
+      document.getElementById(`km${tipo}`).textContent = `${kmRodado} / ${limite.toLocaleString()} km`;
+      const badge = document.getElementById(`badge${tipo}`);
+      if (kmRodado >= limite) {
+        badge.textContent = "TROCAR";
+        badge.className = "text-[9px] font-bold px-1.5 py-0.5 rounded bg-red-500/10 text-red-400 border border-red-500/20 animate-pulse";
+      } else {
+        badge.textContent = "OK";
+        badge.className = "text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20";
+      }
+    }
+
+    function atualizarGrafico(bruto, gastos, liquido) {
+      const ctx = document.getElementById('graficoFinancas').getContext('2d');
+      if (chartInstance) chartInstance.destroy();
+
+      chartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: ['Bruto', 'Gastos', 'Lucro Líquido'],
+          datasets: [{
+            data: [bruto, gastos, Math.max(0, liquido)],
+            backgroundColor: ['#10B981', '#EF4444', '#3B82F6'],
+            borderRadius: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: { ticks: { color: '#9CA3AF' }, grid: { color: '#1F293D' } },
+            x: { ticks: { color: '#9CA3AF' }, grid: { display: false } }
+          }
+        }
+      });
+    }
+
+    renderizar();
+  </script>
+</body>
+</html>
